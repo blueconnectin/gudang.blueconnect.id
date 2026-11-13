@@ -1,6 +1,6 @@
 /** Google Apps Script API untuk aplikasi Gudang Scan. */
 const SHEET_NAME = 'Pemindaian';
-const HEADERS = ['ID', 'Waktu', 'Barcode', 'Nama Barang', 'Jenis ONT', 'Kategori ONT', 'Jumlah', 'Catatan'];
+const HEADERS = ['ID', 'Waktu', 'Barcode', 'Nama Barang', 'Jenis ONT', 'Kategori ONT', 'Jumlah', 'Catatan', 'Keterangan Close WO'];
 function doPost(e) {
   try { return json_(handleRequest(JSON.parse(e.postData.contents || '{}'))); }
   catch (error) { return json_({ ok: false, error: error.message || String(error) }); }
@@ -53,6 +53,7 @@ function addEntry_(sheet, entry, headers) {
   const type = String(entry.type || '').trim();
   if (!['Huawei', 'Fiberhome'].includes(type)) throw new Error('Pilih jenis ONT terlebih dahulu.');
   const category = categoryValue_(entry);
+  const closeWo = closeWoValue_(entry);
   const qty = Number(entry.qty);
   if (!Number.isInteger(qty) || qty < 1) throw new Error('Jumlah harus bilangan bulat minimal 1.');
   const lock = LockService.getScriptLock(); lock.waitLock(10000);
@@ -61,7 +62,7 @@ function addEntry_(sheet, entry, headers) {
       'ID': String(entry.id || Utilities.getUuid()),
       'Waktu': new Date(entry.timestamp || Date.now()),
       'Barcode': String(entry.barcode).trim(), 'Nama Barang': 'ONT',
-      'Jenis ONT': type, 'Kategori ONT': category, 'Jumlah': qty, 'Catatan': String(entry.note || '').trim()
+      'Jenis ONT': type, 'Kategori ONT': category, 'Jumlah': qty, 'Catatan': String(entry.note || '').trim(), 'Keterangan Close WO': closeWo
     };
     sheet.appendRow((headers || sheetHeaders_(sheet)).map(header => values[header] ?? ''));
   } finally { lock.releaseLock(); }
@@ -76,12 +77,13 @@ function addManyEntries_(sheet, entries, headers) {
     if (!barcode) throw new Error('Barcode wajib diisi.');
     if (!['Huawei', 'Fiberhome'].includes(entry.type)) throw new Error('Pilih jenis ONT terlebih dahulu.');
     const category = categoryValue_(entry);
+    const closeWo = closeWoValue_(entry);
     const qty = Number(entry.qty);
     if (!Number.isInteger(qty) || qty < 1) throw new Error('Jumlah harus bilangan bulat minimal 1.');
     const time = new Date(entry.timestamp);
     if (isNaN(time.getTime())) throw new Error('Waktu catatan tidak valid.');
     return {'ID': entry.id, 'Waktu': time, 'Barcode': barcode, 'Nama Barang': 'ONT',
-      'Jenis ONT': entry.type, 'Kategori ONT': category, 'Jumlah': qty, 'Catatan': String(entry.note || '').trim()};
+      'Jenis ONT': entry.type, 'Kategori ONT': category, 'Jumlah': qty, 'Catatan': String(entry.note || '').trim(), 'Keterangan Close WO': closeWo};
   });
   const lock = LockService.getScriptLock(); lock.waitLock(10000);
   try {
@@ -113,7 +115,7 @@ function listEntries_(sheet, suppliedHeaders) {
       barcode: String(value('Barcode') || ''), name: String(value('Nama Barang') || ''),
       category: String(value('Kategori ONT') || ''),
       type: String(value('Jenis ONT') || ''), qty: Number(value('Jumlah')),
-      note: String(value('Catatan') || '')
+      note: String(value('Catatan') || ''), closeWo: String(value('Keterangan Close WO') || '')
     };
   });
 }
@@ -136,6 +138,7 @@ function updateEntry_(sheet, entry, headers) {
   if (!entry || !String(entry.barcode || '').trim()) throw new Error('Barcode wajib diisi.');
   if (!['Huawei', 'Fiberhome'].includes(entry.type)) throw new Error('Pilih jenis ONT terlebih dahulu.');
   const category = categoryValue_(entry);
+  const closeWo = closeWoValue_(entry);
   const qty = Number(entry.qty);
   if (!Number.isInteger(qty) || qty < 1) throw new Error('Jumlah harus bilangan bulat minimal 1.');
   const lock = LockService.getScriptLock(); lock.waitLock(10000);
@@ -147,9 +150,10 @@ function updateEntry_(sheet, entry, headers) {
     const timestamp = row[headers.indexOf('Waktu')];
     const record = {id: entry.id, timestamp: new Date(timestamp).toISOString(),
       barcode: String(entry.barcode).trim(), name: 'ONT', type: entry.type,
-      category, qty, note: String(entry.note || '').trim()};
+      category, qty, closeWo, note: entry.note === undefined ? String(row[headers.indexOf('Catatan')] || '') : String(entry.note || '').trim()};
     const changes = {'Barcode': record.barcode, 'Nama Barang': record.name, 'Jenis ONT': record.type,
-      'Kategori ONT': category, 'Jumlah': qty, 'Catatan': record.note};
+      'Kategori ONT': category, 'Jumlah': qty, 'Keterangan Close WO': closeWo};
+    if (entry.note !== undefined) changes['Catatan'] = record.note;
     range.setValues([headers.map((header, index) => Object.prototype.hasOwnProperty.call(changes, header) ? changes[header] : row[index])]);
     return {ok: true, entry: record};
   } finally { lock.releaseLock(); }
@@ -163,4 +167,10 @@ function deleteEntry_(sheet, id, headers) {
   } finally { lock.releaseLock(); }
 }
 
+// Legacy records/queued entries have no WO status; do not infer one from notes.
+function closeWoValue_(entry) {
+  const status = String(entry.closeWo || '').trim();
+  if (status && !['Sudah', 'Belum'].includes(status)) throw new Error('Status Close WO tidak valid.');
+  return status;
+}
 function json_(value) { return ContentService.createTextOutput(JSON.stringify(value)).setMimeType(ContentService.MimeType.JSON); }

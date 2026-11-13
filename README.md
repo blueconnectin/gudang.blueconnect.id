@@ -48,3 +48,7 @@ Catatan baru memilih kategori **ONT Rusak** atau **ONT Dismantle**, terpisah dar
 ### Edit dan hapus catatan
 
 Kolom Aksi menyediakan Edit dan Hapus untuk catatan yang sudah tersimpan. Edit memperbarui barcode, jenis, kategori, jumlah dan catatan sambil mempertahankan ID serta waktu pencatatan asli. Hapus meminta konfirmasi sebelum menghapus baris pada Google Sheets. Catatan yang masih di antrean belum dapat diedit/dihapus sampai sinkronisasi dikonfirmasi. Perubahan pada layar berlaku setelah respons backend berhasil; kegagalan jaringan ditampilkan tanpa menghapus data di layar. Jika konfirmasi terlalu lama, refresh log untuk memeriksa hasil operasi.
+
+### Keterangan Close WO
+
+Kolom Catatan pada aplikasi diganti dengan dropdown Keterangan Close WO: Sudah atau Belum. Status wajib dipilih untuk input baru dan saat mengedit; muncul pada log, pencarian, serta ekspor Excel. Backend menambahkan kolom Keterangan Close WO pada Sheets tanpa menghapus catatan lama. Data/antrean lama yang belum memiliki status tidak diberi nilai otomatis dan tetap dapat disinkronkan.
