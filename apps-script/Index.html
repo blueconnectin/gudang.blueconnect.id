@@ -16,6 +16,22 @@
  .scanhint{font-size:11px;margin:9px 0 12px}.fields{gap:9px}.fields input,.fields select{height:44px;font-size:16px}.fields label{font-size:10px}.buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px}.btn{min-height:44px;padding:10px 12px}.toolbar{margin:12px 0 9px;gap:8px}.search{min-width:0;height:42px}.toolbar .btn{white-space:nowrap;font-size:12px;padding:9px 10px}.tablewrap{max-height:290px;border-radius:9px}table{font-size:11px}th,td{padding:9px 8px}.foot{font-size:10px;line-height:1.45;margin-top:10px}.stat{font-size:22px}
 }
 @media(max-width:380px){header{padding:12px 11px}.brand{font-size:16px}.badge{font-size:8px}.wrap{padding:0 8px}.card{padding:11px}.scanner{min-height:155px}.toolbar .btn{font-size:11px}.buttons{grid-template-columns:1fr}}
+
+/* Mobile fit: keep camera preview bounded and prevent page-wide horizontal clipping. */
+@media(max-width:600px){
+ html,body{width:100%;max-width:100%;overflow-x:hidden}
+ header{width:100%;min-width:0;padding:12px 14px;align-items:center}
+ header>div:first-child{min-width:0}.brand{font-size:17px;white-space:nowrap}.subtitle{white-space:normal}
+ .badge{flex:0 0 auto;font-size:8px;padding:5px 6px}
+ .wrap{width:100%;max-width:100%;margin:10px auto;padding:0 9px}
+ .grid,.card{min-width:0;width:100%}.card{padding:12px}
+ .cardhead{gap:8px}.sync{font-size:10px;white-space:nowrap}
+ .scanner{height:clamp(155px,42vw,220px);min-height:0;width:100%}
+ #reader{height:100%;min-height:0}#reader video{width:100%!important;height:100%!important;object-fit:cover!important}
+ #reader__scan_region{min-height:0!important}
+ .fields{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+ .tablewrap{width:100%;max-width:100%}
+}
 </style></head><body>
 <header><div><div class="brand">blue<span>connect</span> / gudang</div><div class="subtitle">Pencatatan barang · barcode scanner</div></div><div class="badge">● SISTEM INVENTARIS</div></header>
 <main class="wrap"><div class="grid"><section class="card"><div class="cardhead"><div><div class="eyebrow">Input barang</div><h1>Scan barcode</h1></div><div class="sync"><i id="syncdot" class="dot"></i><span id="synctext">Memuat...</span></div></div><div class="scanner"><div id="reader"></div></div><p class="scanhint">Arahkan kamera ke barcode. Kamera memerlukan HTTPS dan izin akses. Anda juga bisa mengetik kode secara manual.</p><div class="fields"><div class="fieldwide"><label for="barcode">KODE BARCODE</label><input id="barcode" autocomplete="off" placeholder="Scan atau masukkan kode"></div><div><label for="item">NAMA BARANG</label><input id="item" value="ONT" readonly></div><div><label for="type">JENIS ONT</label><select id="type"><option value="Huawei">Huawei</option><option value="Fiberhome">Fiberhome</option></select></div><div><label for="qty">JUMLAH</label><input id="qty" type="number" min="1" step="1" value=""></div><div class="fieldwide"><label for="note">CATATAN (OPSIONAL)</label><input id="note" placeholder="Lokasi rak, kondisi, dll."></div></div><div class="buttons"><button class="btn" id="save">Simpan barang</button><button class="btn secondary" id="clear">Bersihkan</button></div><div id="status" class="status" role="status"></div></section>
