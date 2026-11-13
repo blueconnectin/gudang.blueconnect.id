@@ -1,0 +1,54 @@
+name: Deploy Apps Script
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps-script/**'
+      - '.github/workflows/deploy-appscript.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install clasp
+        run: npm install --global @google/clasp@3.4.1
+
+      - name: Configure clasp credentials
+        env:
+          CLASP_CREDENTIALS: ${{ secrets.CLASP_CREDENTIALS }}
+          SCRIPT_ID: ${{ secrets.SCRIPT_ID }}
+        run: |
+          test -n "$CLASP_CREDENTIALS" || { echo 'Missing CLASP_CREDENTIALS repository secret'; exit 1; }
+          test -n "$SCRIPT_ID" || { echo 'Missing SCRIPT_ID repository secret'; exit 1; }
+          printf '%s' "$CLASP_CREDENTIALS" > "$HOME/.clasprc.json"
+          printf '{"scriptId":"%s","rootDir":"apps-script"}\n' "$SCRIPT_ID" > apps-script/.clasp.json
+
+      - name: Push source and create version
+        run: |
+          cd apps-script
+          clasp push --force
+          clasp version "GitHub Actions ${GITHUB_SHA}"
+
+      - name: Create or update web app deployment
+        env:
+          DEPLOYMENT_ID: ${{ secrets.DEPLOYMENT_ID }}
+        run: |
+          cd apps-script
+          if [ -n "$DEPLOYMENT_ID" ]; then
+            clasp deploy --deploymentId "$DEPLOYMENT_ID" --description "GitHub Actions ${GITHUB_SHA}"
+          else
+            clasp deploy --description "GitHub Actions ${GITHUB_SHA}"
+          fi
