@@ -12,7 +12,10 @@ function doPost(e) {
     return json_(result);
   } catch (err) { return json_({ ok: false, error: err.message || String(err) }); }
 }
-function doGet() { return json_({ ok: true, service: 'Gudang Scan API' }); }
+function doGet() {
+  return HtmlService.createHtmlOutputFromFile('Index')
+    .setTitle('Gudang Scan');
+}
 function getSheet_() {
   const id = PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID');
   if (!id) throw new Error('Script Property SPREADSHEET_ID belum diatur.');
