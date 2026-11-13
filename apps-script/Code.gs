@@ -1,6 +1,6 @@
 /** Google Apps Script API untuk aplikasi Gudang Scan. */
 const SHEET_NAME = 'Pemindaian';
-const HEADERS = ['ID', 'Waktu', 'Barcode', 'Nama Barang', 'Jenis ONT', 'Jumlah', 'Catatan'];
+const HEADERS = ['ID', 'Waktu', 'Barcode', 'Nama Barang', 'Jenis ONT', 'Kategori ONT', 'Jumlah', 'Catatan'];
 function doPost(e) {
   try { return json_(handleRequest(JSON.parse(e.postData.contents || '{}'))); }
   catch (error) { return json_({ ok: false, error: error.message || String(error) }); }
@@ -50,6 +50,7 @@ function addEntry_(sheet, entry, headers) {
   if (!entry || !String(entry.barcode || '').trim()) throw new Error('Barcode wajib diisi.');
   const type = String(entry.type || '').trim();
   if (!['Huawei', 'Fiberhome'].includes(type)) throw new Error('Pilih jenis ONT terlebih dahulu.');
+  const category = categoryValue_(entry);
   const qty = Number(entry.qty);
   if (!Number.isInteger(qty) || qty < 1) throw new Error('Jumlah harus bilangan bulat minimal 1.');
   const lock = LockService.getScriptLock(); lock.waitLock(10000);
@@ -58,7 +59,7 @@ function addEntry_(sheet, entry, headers) {
       'ID': String(entry.id || Utilities.getUuid()),
       'Waktu': new Date(entry.timestamp || Date.now()),
       'Barcode': String(entry.barcode).trim(), 'Nama Barang': 'ONT',
-      'Jenis ONT': type, 'Jumlah': qty, 'Catatan': String(entry.note || '').trim()
+      'Jenis ONT': type, 'Kategori ONT': category, 'Jumlah': qty, 'Catatan': String(entry.note || '').trim()
     };
     sheet.appendRow((headers || sheetHeaders_(sheet)).map(header => values[header] ?? ''));
   } finally { lock.releaseLock(); }
@@ -72,12 +73,13 @@ function addManyEntries_(sheet, entries, headers) {
     const barcode = String(entry.barcode || '').trim();
     if (!barcode) throw new Error('Barcode wajib diisi.');
     if (!['Huawei', 'Fiberhome'].includes(entry.type)) throw new Error('Pilih jenis ONT terlebih dahulu.');
+    const category = categoryValue_(entry);
     const qty = Number(entry.qty);
     if (!Number.isInteger(qty) || qty < 1) throw new Error('Jumlah harus bilangan bulat minimal 1.');
     const time = new Date(entry.timestamp);
     if (isNaN(time.getTime())) throw new Error('Waktu catatan tidak valid.');
     return {'ID': entry.id, 'Waktu': time, 'Barcode': barcode, 'Nama Barang': 'ONT',
-      'Jenis ONT': entry.type, 'Jumlah': qty, 'Catatan': String(entry.note || '').trim()};
+      'Jenis ONT': entry.type, 'Kategori ONT': category, 'Jumlah': qty, 'Catatan': String(entry.note || '').trim()};
   });
   const lock = LockService.getScriptLock(); lock.waitLock(10000);
   try {
@@ -107,9 +109,16 @@ function listEntries_(sheet, suppliedHeaders) {
       id: String(value('ID') || ''),
       timestamp: time instanceof Date ? time.toISOString() : new Date(time).toISOString(),
       barcode: String(value('Barcode') || ''), name: String(value('Nama Barang') || ''),
+      category: String(value('Kategori ONT') || ''),
       type: String(value('Jenis ONT') || ''), qty: Number(value('Jumlah')),
       note: String(value('Catatan') || '')
     };
   });
+}
+// Older queued records can have no category. Never guess a category for them.
+function categoryValue_(entry) {
+  const category = String(entry.category || '').trim();
+  if (category && !['ONT Rusak', 'ONT Dismantle'].includes(category)) throw new Error('Kategori ONT tidak valid.');
+  return category;
 }
 function json_(value) { return ContentService.createTextOutput(JSON.stringify(value)).setMimeType(ContentService.MimeType.JSON); }

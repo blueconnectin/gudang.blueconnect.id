@@ -40,3 +40,7 @@ Workflow mendeploy web app, tetapi tidak membuat/mengatur spreadsheet atau Scrip
 ### Penyimpanan cepat dengan antrean
 
 Tombol Simpan memasukkan catatan ke antrean browser dan langsung menyiapkan formulir berikutnya. Kolom Status membedakan Menunggu, Mengirim, dan Tersimpan (setelah dikonfirmasi backend). Antrean yang gagal dikirim tetap disimpan pada browser yang sama, dicoba ulang otomatis, dan dapat dikirim ulang melalui tombol Kirim ulang. Membuka kembali halaman pada browser tersebut melanjutkan antrean; menghapus data situs/browser juga menghapus antrean lokal. Ekspor hanya memuat data yang sudah dikonfirmasi. Backend menulis hingga 20 catatan per permintaan dan mencegah duplikasi pengiriman ulang berdasarkan ID catatan. Pemindaian barcode yang sama sebagai catatan baru tetap memiliki ID berbeda.
+
+### Kategori ONT
+
+Catatan baru memilih kategori **ONT Rusak** atau **ONT Dismantle**, terpisah dari jenis Huawei/Fiberhome. Kategori tersedia pada log, pencarian, antrean penyimpanan dan ekspor Excel. Backend menambahkan kolom Kategori ONT jika belum ada. Catatan dan antrean lama yang tidak memiliki kategori tetap kosong tanpa penetapan otomatis.
