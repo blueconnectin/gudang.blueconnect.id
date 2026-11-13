@@ -1,6 +1,6 @@
 /** Google Apps Script API untuk aplikasi Gudang Scan. */
 const SHEET_NAME = 'Pemindaian';
-const HEADERS = ['ID', 'Waktu', 'Barcode', 'Nama Barang', 'Jumlah', 'Catatan'];
+const HEADERS = ['ID', 'Waktu', 'Barcode', 'Nama Barang', 'Jenis ONT', 'Jumlah', 'Catatan'];
 function doPost(e) {
   try {
     const body = JSON.parse(e.postData.contents || '{}');
@@ -31,12 +31,12 @@ function addEntry_(sheet, entry) {
   if (!Number.isInteger(qty) || qty < 1) throw new Error('Jumlah harus bilangan bulat minimal 1.');
   const lock = LockService.getScriptLock(); lock.waitLock(10000);
   try {
-    sheet.appendRow([String(entry.id || Utilities.getUuid()), new Date(entry.timestamp || Date.now()), String(entry.barcode).trim(), String(entry.name || '').trim(), qty, String(entry.note || '').trim()]);
+    sheet.appendRow([String(entry.id || Utilities.getUuid()), new Date(entry.timestamp || Date.now()), String(entry.barcode).trim(), String(entry.name || 'ONT').trim(), String(entry.type || '').trim(), qty, String(entry.note || '').trim()]);
   } finally { lock.releaseLock(); }
   return { ok: true };
 }
 function listEntries_(sheet) {
   const last = sheet.getLastRow(); if (last < 2) return [];
-  return sheet.getRange(2, 1, last - 1, HEADERS.length).getValues().reverse().map(r => ({ id: String(r[0]), timestamp: r[1] instanceof Date ? r[1].toISOString() : new Date(r[1]).toISOString(), barcode: String(r[2]), name: String(r[3]), qty: Number(r[4]), note: String(r[5]) }));
+  return sheet.getRange(2, 1, last - 1, Math.max(HEADERS.length, sheet.getLastColumn())).getValues().reverse().map(r => ({ id: String(r[0]), timestamp: r[1] instanceof Date ? r[1].toISOString() : new Date(r[1]).toISOString(), barcode: String(r[2]), name: String(r[3]), type: String(r[4]), qty: Number(r[5]), note: String(r[6]) }));
 }
 function json_(value) { return ContentService.createTextOutput(JSON.stringify(value)).setMimeType(ContentService.MimeType.JSON); }
