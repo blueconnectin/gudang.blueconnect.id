@@ -45,9 +45,22 @@
 #reader{flex:0 0 100%;height:auto;min-width:0}
 @media(max-width:600px){.scanner{height:clamp(150px,44vw,200px);min-height:0}}
 .camera-controls{display:flex;align-items:center;gap:10px;justify-content:space-between;margin-top:10px;font-size:12px;line-height:1.5;color:var(--muted)}.camera-controls span{flex:1;min-width:0;overflow-wrap:anywhere}.camera-controls button{flex:none}.camera-controls button[hidden]{display:none}
+
+/* A short visual guide, centred inside the existing decoder region. */
+.scanner{height:210px}
+.scanner.camera-ready #qr-shaded-region{visibility:hidden!important}
+.scanner.camera-ready::after{
+ content:"";position:absolute;z-index:5;pointer-events:none;left:50%;top:50%;
+ transform:translate(-50%,-50%);width:min(82%,350px);height:64px;
+ border-left:3px solid white;border-right:3px solid white;
+ background:linear-gradient(to right,white 26px,transparent 26px,transparent calc(100% - 26px),white calc(100% - 26px)) top / 100% 3px no-repeat,
+ linear-gradient(to right,white 26px,transparent 26px,transparent calc(100% - 26px),white calc(100% - 26px)) bottom / 100% 3px no-repeat;
+ box-shadow:0 0 0 9999px rgba(0,0,0,.2)
+}
+@media(max-width:600px){.scanner{height:clamp(140px,40vw,180px);min-height:0}}
 </style></head><body>
 <header><div><div class="brand">blue<span>connect</span> / gudang</div><div class="subtitle">Pencatatan barang · barcode scanner</div></div><div class="badge">● SISTEM INVENTARIS</div></header>
-<main class="wrap"><div class="grid"><section class="card"><div class="cardhead"><div><div class="eyebrow">Input barang</div><h1>Scan barcode</h1></div><div class="sync"><i id="syncdot" class="dot"></i><span id="synctext">Memuat...</span></div></div><div class="scanner"><div id="reader"></div></div><div class="camera-controls"><span id="camera-status" role="status" aria-live="polite">Menyiapkan kamera…</span><button id="camera-start" class="btn secondary" type="button">Buka kamera</button></div><p class="scanhint">Arahkan seluruh barcode ke bingkai kamera. Anda juga bisa mengetik kode secara manual. · Scanner v5</p><div class="fields"><div class="fieldwide"><label for="barcode">KODE BARCODE</label><input id="barcode" autocomplete="off" placeholder="Scan atau masukkan kode"></div><div><label for="item">NAMA BARANG</label><input id="item" value="ONT" readonly></div><div><label for="type">JENIS ONT</label><select id="type" required><option value="" selected disabled>Pilih jenis ONT</option><option value="Huawei">Huawei</option><option value="Fiberhome">Fiberhome</option></select></div><div><label for="qty">JUMLAH</label><input id="qty" type="number" min="1" step="1" value=""></div><div class="fieldwide"><label for="note">CATATAN (OPSIONAL)</label><input id="note" placeholder="Lokasi rak, kondisi, dll."></div></div><div class="buttons"><button class="btn" id="save">Simpan barang</button><button class="btn secondary" id="clear">Bersihkan</button></div><div id="status" class="status" role="status"></div></section>
+<main class="wrap"><div class="grid"><section class="card"><div class="cardhead"><div><div class="eyebrow">Input barang</div><h1>Scan barcode</h1></div><div class="sync"><i id="syncdot" class="dot"></i><span id="synctext">Memuat...</span></div></div><div class="scanner"><div id="reader"></div></div><div class="camera-controls"><span id="camera-status" role="status" aria-live="polite">Menyiapkan kamera…</span><button id="camera-start" class="btn secondary" type="button">Buka kamera</button></div><p class="scanhint">Arahkan seluruh barcode ke bingkai kamera. Anda juga bisa mengetik kode secara manual. · Scanner v6</p><div class="fields"><div class="fieldwide"><label for="barcode">KODE BARCODE</label><input id="barcode" autocomplete="off" placeholder="Scan atau masukkan kode"></div><div><label for="item">NAMA BARANG</label><input id="item" value="ONT" readonly></div><div><label for="type">JENIS ONT</label><select id="type" required><option value="" selected disabled>Pilih jenis ONT</option><option value="Huawei">Huawei</option><option value="Fiberhome">Fiberhome</option></select></div><div><label for="qty">JUMLAH</label><input id="qty" type="number" min="1" step="1" value=""></div><div class="fieldwide"><label for="note">CATATAN (OPSIONAL)</label><input id="note" placeholder="Lokasi rak, kondisi, dll."></div></div><div class="buttons"><button class="btn" id="save">Simpan barang</button><button class="btn secondary" id="clear">Bersihkan</button></div><div id="status" class="status" role="status"></div></section>
 <section class="card"><div class="cardhead"><div><div class="eyebrow">Log pemindaian</div><h2>Barang tercatat</h2></div><div><div id="count" class="stat">0</div><div class="statlabel">total catatan</div></div></div><div class="toolbar"><input id="search" class="search" placeholder="Cari kode atau nama…"><button id="export" class="btn dark">↓ Ekspor Excel</button></div><div class="tablewrap"><table><thead><tr><th>Waktu</th><th>Barcode</th><th>Nama barang</th><th>Jenis ONT</th><th>Jumlah</th><th>Catatan</th></tr></thead><tbody id="rows"></tbody></table></div><div class="foot">Data disimpan ke Google Sheets saat Apps Script terhubung. Ekspor Excel mengunduh catatan yang tersedia di aplikasi ini.</div></section></div><p class="foot">Akses kamera hanya tersedia pada situs HTTPS atau localhost. Pada perangkat baru, pastikan browser diizinkan memakai kamera.</p></main>
 <script>
 const API_URL='https://script.google.com/macros/s/AKfycbwkSRUYh9Euvo70y40xWkn6YqBL-m2Aq7t44i-nmzapWQct0fcd_qRuLrYVchHhpuU/exec';
@@ -89,6 +102,7 @@ async function startCamera(){
    if(navigator.vibrate)navigator.vibrate(70);
   },()=>{});
   if(!cameraStatus.textContent.startsWith('Barcode terbaca'))cameraStatus.textContent='Kamera aktif. Arahkan barcode ke bingkai.';
+  document.querySelector('.scanner').classList.add('camera-ready');
   cameraButton.hidden=true;
  }catch(error){
   console.error('Scanner start failed',error);
