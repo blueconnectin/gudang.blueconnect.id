@@ -8,10 +8,12 @@ function doPost(e) {
 // Shared by HTTP clients and the Apps Script page (google.script.run).
 function handleRequest(body) {
   try {
-    if (!body || !['add', 'addMany', 'list'].includes(body.action)) throw new Error('Aksi tidak dikenal.');
+    if (!body || !['add', 'addMany', 'list', 'update', 'delete'].includes(body.action)) throw new Error('Aksi tidak dikenal.');
     const context = getSheetContext_();
     if (body.action === 'add') return addEntry_(context.sheet, body.entry, context.headers);
     if (body.action === 'addMany') return addManyEntries_(context.sheet, body.entries, context.headers);
+    if (body.action === 'update') return updateEntry_(context.sheet, body.entry, context.headers);
+    if (body.action === 'delete') return deleteEntry_(context.sheet, body.id, context.headers);
     return { ok: true, entries: listEntries_(context.sheet, context.headers) };
   } catch (error) { return { ok: false, error: error.message || String(error) }; }
 }
@@ -121,4 +123,44 @@ function categoryValue_(entry) {
   if (category && !['ONT Rusak', 'ONT Dismantle'].includes(category)) throw new Error('Kategori ONT tidak valid.');
   return category;
 }
+function findRecordRow_(sheet, headers, id) {
+  if (typeof id !== 'string' || !id || id.length > 200) throw new Error('ID catatan tidak valid.');
+  const last = sheet.getLastRow();
+  if (last < 2) return 0;
+  const matches = sheet.getRange(2, headers.indexOf('ID') + 1, last - 1, 1).getValues()
+    .map((row, index) => String(row[0]) === id ? index + 2 : 0).filter(Boolean);
+  if (matches.length > 1) throw new Error('ID catatan ganda ditemukan. Periksa Google Sheets terlebih dahulu.');
+  return matches[0] || 0;
+}
+function updateEntry_(sheet, entry, headers) {
+  if (!entry || !String(entry.barcode || '').trim()) throw new Error('Barcode wajib diisi.');
+  if (!['Huawei', 'Fiberhome'].includes(entry.type)) throw new Error('Pilih jenis ONT terlebih dahulu.');
+  const category = categoryValue_(entry);
+  const qty = Number(entry.qty);
+  if (!Number.isInteger(qty) || qty < 1) throw new Error('Jumlah harus bilangan bulat minimal 1.');
+  const lock = LockService.getScriptLock(); lock.waitLock(10000);
+  try {
+    const rowNumber = findRecordRow_(sheet, headers, entry.id);
+    if (!rowNumber) throw new Error('Catatan tidak ditemukan. Muat ulang log.');
+    const range = sheet.getRange(rowNumber, 1, 1, headers.length);
+    const row = range.getValues()[0];
+    const timestamp = row[headers.indexOf('Waktu')];
+    const record = {id: entry.id, timestamp: new Date(timestamp).toISOString(),
+      barcode: String(entry.barcode).trim(), name: 'ONT', type: entry.type,
+      category, qty, note: String(entry.note || '').trim()};
+    const changes = {'Barcode': record.barcode, 'Nama Barang': record.name, 'Jenis ONT': record.type,
+      'Kategori ONT': category, 'Jumlah': qty, 'Catatan': record.note};
+    range.setValues([headers.map((header, index) => Object.prototype.hasOwnProperty.call(changes, header) ? changes[header] : row[index])]);
+    return {ok: true, entry: record};
+  } finally { lock.releaseLock(); }
+}
+function deleteEntry_(sheet, id, headers) {
+  const lock = LockService.getScriptLock(); lock.waitLock(10000);
+  try {
+    const rowNumber = findRecordRow_(sheet, headers, id);
+    if (rowNumber) sheet.deleteRow(rowNumber);
+    return {ok: true, id};
+  } finally { lock.releaseLock(); }
+}
+
 function json_(value) { return ContentService.createTextOutput(JSON.stringify(value)).setMimeType(ContentService.MimeType.JSON); }

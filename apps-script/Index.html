@@ -41,10 +41,22 @@
 .toolbar{flex-wrap:wrap}.toolbar .search{flex:1 1 180px;max-width:none;min-width:0}.toolbar button{flex:0 0 auto}.log-status{font-size:11px;color:var(--muted);line-height:1.5;margin:0 0 10px;overflow-wrap:anywhere}
 .queue-summary{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;color:var(--muted);font-size:12px;line-height:1.5}.queue-summary span{min-width:0;overflow-wrap:anywhere}.queue-summary button[hidden]{display:none}
 .camera-feedback{display:flex;align-items:center;justify-content:space-between;gap:8px;color:var(--muted);font-size:12px;line-height:1.5;margin-top:8px}.camera-feedback span{min-width:0;overflow-wrap:anywhere}.camera-feedback button{flex:none}.camera-feedback button[hidden]{display:none}
+
+.row-actions{white-space:nowrap}.row-actions button{min-height:40px;border:0;border-radius:7px;padding:7px 10px;font:600 12px 'DM Sans';cursor:pointer;margin-right:5px}.row-edit{color:var(--teal);background:#e8f4f5}.row-delete{color:var(--red);background:#fff0ed}.row-actions button:disabled{opacity:.45;cursor:default}.row-actions small{display:block;color:var(--muted);font-size:10px}
+#edit-dialog{width:calc(100% - 28px);max-width:480px;max-height:85vh;overflow:auto;border:1px solid var(--line);border-radius:16px;padding:22px;color:var(--ink);background:white}#edit-dialog::backdrop{background:rgba(7,26,42,.6)}.edit-help{font-size:12px;color:var(--muted);margin:7px 0 18px}#edit-note{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px;font:16px 'DM Sans';resize:vertical}#edit-error{font-size:12px;color:var(--red);min-height:17px;margin-top:12px}#edit-dialog input,#edit-dialog select{font-size:16px}
 </style></head><body>
 <header><div><div class="brand">blue<span>connect</span> / gudang</div><div class="subtitle">Pencatatan barang · barcode scanner</div></div><div class="badge">● SISTEM INVENTARIS</div></header>
 <main class="wrap"><div class="grid"><section class="card"><div class="cardhead"><div><div class="eyebrow">Input barang</div><h1>Scan barcode</h1></div><div class="sync"><i id="syncdot" class="dot"></i><span id="synctext">Memuat...</span></div></div><div class="scanner"><div id="reader"></div></div><div class="camera-feedback"><span id="camera-message" role="status" aria-live="polite">Menyiapkan kamera…</span><button id="camera-open" class="btn secondary" type="button">Buka kamera</button></div><p class="scanhint">Bidik satu barcode serial di tengah bingkai. Jauhkan barcode lain dari bingkai. Anda juga bisa mengetik kode secara manual. · Scanner v3</p><div class="fields"><div class="fieldwide"><label for="barcode">KODE BARCODE</label><input id="barcode" autocomplete="off" placeholder="Scan atau masukkan kode"></div><div><label for="item">NAMA BARANG</label><input id="item" value="ONT" readonly></div><div><label for="type">JENIS ONT</label><select id="type" required><option value="" selected disabled>Pilih jenis ONT</option><option value="Huawei">Huawei</option><option value="Fiberhome">Fiberhome</option></select></div><div><label for="category">KATEGORI ONT</label><select id="category" required><option value="" selected disabled>Pilih kategori ONT</option><option value="ONT Rusak">ONT Rusak</option><option value="ONT Dismantle">ONT Dismantle</option></select></div><div><label for="qty">JUMLAH</label><input id="qty" type="number" min="1" step="1" value=""></div><div class="fieldwide"><label for="note">CATATAN (OPSIONAL)</label><input id="note" placeholder="Lokasi rak, kondisi, dll."></div></div><div class="buttons"><button class="btn" id="save">Simpan barang</button><button class="btn secondary" id="clear">Bersihkan</button></div><div id="status" class="status" role="status"></div></section>
-<section class="card"><div class="cardhead"><div><div class="eyebrow">Log pemindaian</div><h2>Barang tercatat</h2></div><div><div id="count" class="stat">0</div><div class="statlabel">total catatan</div></div></div><div class="toolbar"><input id="search" class="search" placeholder="Cari kode atau nama…"><button id="refresh-log" class="btn secondary" type="button">↻ Refresh</button><button id="export" class="btn dark">↓ Ekspor Excel</button></div><div class="queue-summary"><span id="queue-status" role="status" aria-live="polite"></span><button id="retry-queue" class="btn secondary" type="button" hidden>Kirim ulang</button></div><p id="log-status" class="log-status" role="status" aria-live="polite"></p><div class="tablewrap"><table><thead><tr><th>Waktu</th><th>Barcode</th><th>Nama barang</th><th>Jenis ONT</th><th>Kategori ONT</th><th>Jumlah</th><th>Status</th><th>Catatan</th></tr></thead><tbody id="rows"></tbody></table></div><div class="foot">Data disimpan ke Google Sheets saat Apps Script terhubung. Ekspor Excel hanya memuat catatan yang sudah dikonfirmasi tersimpan. Antrean tetap disimpan pada browser ini sampai terkirim.</div></section></div><p class="foot">Akses kamera hanya tersedia pada situs HTTPS atau localhost. Pada perangkat baru, pastikan browser diizinkan memakai kamera.</p></main>
+<section class="card"><div class="cardhead"><div><div class="eyebrow">Log pemindaian</div><h2>Barang tercatat</h2></div><div><div id="count" class="stat">0</div><div class="statlabel">total catatan</div></div></div><div class="toolbar"><input id="search" class="search" placeholder="Cari kode atau nama…"><button id="refresh-log" class="btn secondary" type="button">↻ Refresh</button><button id="export" class="btn dark">↓ Ekspor Excel</button></div><div class="queue-summary"><span id="queue-status" role="status" aria-live="polite"></span><button id="retry-queue" class="btn secondary" type="button" hidden>Kirim ulang</button></div><p id="log-status" class="log-status" role="status" aria-live="polite"></p><div class="tablewrap"><table><thead><tr><th>Aksi</th><th>Waktu</th><th>Barcode</th><th>Nama barang</th><th>Jenis ONT</th><th>Kategori ONT</th><th>Jumlah</th><th>Status</th><th>Catatan</th></tr></thead><tbody id="rows"></tbody></table></div><div class="foot">Data disimpan ke Google Sheets saat Apps Script terhubung. Ekspor Excel hanya memuat catatan yang sudah dikonfirmasi tersimpan. Antrean tetap disimpan pada browser ini sampai terkirim.</div></section></div><p class="foot">Akses kamera hanya tersedia pada situs HTTPS atau localhost. Pada perangkat baru, pastikan browser diizinkan memakai kamera.</p></main>
+<dialog id="edit-dialog" aria-labelledby="edit-title"><form id="edit-form">
+<h2 id="edit-title">Edit barang</h2><p class="edit-help">Perbarui catatan yang sudah tersimpan.</p>
+<div class="fields"><div class="fieldwide"><label for="edit-barcode">KODE BARCODE</label><input id="edit-barcode" required autocomplete="off"></div>
+<div><label for="edit-type">JENIS ONT</label><select id="edit-type" required><option value="" disabled>Pilih jenis ONT</option><option>Huawei</option><option>Fiberhome</option></select></div>
+<div><label for="edit-category">KATEGORI ONT</label><select id="edit-category" required><option value="" disabled>Pilih kategori ONT</option><option>ONT Rusak</option><option>ONT Dismantle</option></select></div>
+<div><label for="edit-qty">JUMLAH</label><input id="edit-qty" type="number" min="1" step="1" required></div>
+<div class="fieldwide"><label for="edit-note">CATATAN</label><textarea id="edit-note" rows="3"></textarea></div></div>
+<p id="edit-error" role="alert"></p><div class="buttons"><button class="btn" id="edit-submit" type="submit">Simpan perubahan</button><button class="btn secondary" id="edit-cancel" type="button">Batal</button></div>
+</form></dialog>
 <script>
 const API_URL='https://script.google.com/macros/s/AKfycbwkSRUYh9Euvo70y40xWkn6YqBL-m2Aq7t44i-nmzapWQct0fcd_qRuLrYVchHhpuU/exec';
 const KEY='blueconnect-gudang-scans-v1';
@@ -60,7 +72,7 @@ function readStoredRows(key){
 let entries=readStoredRows(KEY),busy=false;
 const $=id=>document.getElementById(id), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function setStatus(t,type=''){const e=$('status');e.textContent=t;e.className='status '+type}
-function render(){let q=$('search').value.trim().toLowerCase();const all=queueView();showQueue();let filtered=all.filter(x=>!q||`${x.barcode} ${x.name} ${x.type||''} ${x.category||''} ${x.note}`.toLowerCase().includes(q));$('count').textContent=all.length.toLocaleString('id-ID');$('rows').innerHTML=filtered.length?filtered.map(x=>`<tr><td>${esc(new Date(x.timestamp).toLocaleString('id-ID'))}</td><td class="code">${esc(x.barcode)}</td><td>${esc(x.name||'—')}</td><td>${esc(x.type||'—')}</td><td>${esc(x.category||'—')}</td><td class="qty">${esc(x.qty)}</td><td>${esc(x.saveState||(API_URL?'Tersimpan':'Lokal'))}</td><td>${esc(x.note||'—')}</td></tr>`).join(''):`<tr><td colspan="8" class="empty">${all.length?'Tidak ada hasil pencarian.':'Belum ada barang. Mulai dengan memindai barcode.'}</td></tr>`}
+function render(){let q=$('search').value.trim().toLowerCase();const all=queueView();showQueue();let filtered=all.filter(x=>!q||`${x.barcode} ${x.name} ${x.type||''} ${x.category||''} ${x.note}`.toLowerCase().includes(q));$('count').textContent=all.length.toLocaleString('id-ID');$('rows').innerHTML=filtered.length?filtered.map(x=>`<tr>${recordButtons(x)}<td>${esc(new Date(x.timestamp).toLocaleString('id-ID'))}</td><td class="code">${esc(x.barcode)}</td><td>${esc(x.name||'—')}</td><td>${esc(x.type||'—')}</td><td>${esc(x.category||'—')}</td><td class="qty">${esc(x.qty)}</td><td>${esc(x.saveState||(API_URL?'Tersimpan':'Lokal'))}</td><td>${esc(x.note||'—')}</td></tr>`).join(''):`<tr><td colspan="9" class="empty">${all.length?'Tidak ada hasil pencarian.':'Belum ada barang. Mulai dengan memindai barcode.'}</td></tr>`}
 async function api(action,data,signal){
  if(!API_URL)return null;
  let result;
@@ -156,9 +168,62 @@ async function save(){
 
 $('save').onclick=save;$('barcode').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();$('item').focus()}};$('item').onkeydown=e=>{if(e.key==='Enter')save()};$('clear').onclick=()=>{$('barcode').value='';$('item').value='ONT';$('type').value='';$('category').value='';$('qty').value='';$('note').value='';setStatus('Formulir dibersihkan.');$('barcode').focus()};$('search').oninput=render;
 $('export').onclick=()=>{if(!entries.length){setStatus('Belum ada catatan untuk diekspor.','error');return}let data=entries.map(x=>({'Waktu':new Date(x.timestamp).toLocaleString('id-ID'),'Barcode':x.barcode,'Nama Barang':x.name,'Jenis ONT':x.type||'','Kategori ONT':x.category||'', 'Jumlah':x.qty,'Catatan':x.note}));if(window.XLSX){let ws=XLSX.utils.json_to_sheet(data);ws['!cols']=[{wch:22},{wch:24},{wch:20},{wch:16},{wch:20},{wch:10},{wch:35}];let wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Pemindaian');XLSX.writeFile(wb,`gudang-scan-${new Date().toISOString().slice(0,10)}.xlsx`)}else{let csv='\ufeff'+[Object.keys(data[0]).join(';'),...data.map(r=>Object.values(r).map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(';'))].join('\r\n');let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download=`gudang-scan-${new Date().toISOString().slice(0,10)}.csv`;a.click();setStatus('Library Excel tidak tersedia; berkas CSV dibuat.','error')}};
+let editingRecordId=null,recordActionBusy=false;
+function recordButtons(row){
+ const pending=pendingEntries.some(item=>item.id===row.id);
+ const disabled=!row.id||pending||recordActionBusy;
+ return `<td class="row-actions"><button class="row-edit" type="button" data-record-action="edit" data-id="${esc(row.id||'')}" ${disabled?'disabled':''}>Edit</button><button class="row-delete" type="button" data-record-action="delete" data-id="${esc(row.id||'')}" ${disabled?'disabled':''}>Hapus</button>${pending?'<small>Menunggu tersimpan</small>':''}</td>`;
+}
+function cacheRecords(){try{localStorage.setItem(KEY,JSON.stringify(entries))}catch(error){console.warn('Local record cache unavailable')}}
+async function recordRequest(action,data){
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),30000);
+ try{return await api(action,data,controller.signal)}finally{clearTimeout(timer)}
+}
+function openRecordEditor(id){
+ if(recordActionBusy||pendingEntries.some(row=>row.id===id))return;
+ const row=entries.find(row=>row.id===id);if(!row)return;
+ editingRecordId=id;
+ for(const key of ['barcode','type','category','qty','note'])$('edit-'+key).value=row[key]??'';
+ $('edit-error').textContent='';$('edit-dialog').showModal();
+}
+$('edit-cancel').onclick=()=>{if(!recordActionBusy)$('edit-dialog').close()};
+$('edit-dialog').addEventListener('cancel',event=>{if(recordActionBusy)event.preventDefault()});
+$('edit-dialog').addEventListener('close',()=>{editingRecordId=null});
+$('edit-form').onsubmit=async event=>{
+ event.preventDefault();if(recordActionBusy||!editingRecordId)return;
+ const row={id:editingRecordId,barcode:$('edit-barcode').value.trim(),type:$('edit-type').value,category:$('edit-category').value,qty:Number($('edit-qty').value),note:$('edit-note').value.trim()};
+ if(!row.barcode||!['Huawei','Fiberhome'].includes(row.type)||!['ONT Rusak','ONT Dismantle'].includes(row.category)||!Number.isInteger(row.qty)||row.qty<1){$('edit-error').textContent='Lengkapi barcode, jenis, kategori, dan jumlah yang valid.';return;}
+ recordActionBusy=true;logRevision++;render();
+ $('edit-submit').disabled=true;$('edit-cancel').disabled=true;$('edit-submit').textContent='Menyimpan…';$('edit-error').textContent='';
+ try{
+  const result=API_URL?await recordRequest('update',{entry:row}):{ok:true,entry:{...entries.find(item=>item.id===row.id),...row}};
+  if(!result.entry||result.entry.id!==row.id)throw Error('Konfirmasi perubahan tidak sesuai.');
+  entries=entries.map(item=>item.id===row.id?result.entry:item);cacheRecords();
+  $('edit-dialog').close();$('log-status').textContent='Perubahan barang berhasil disimpan.';
+ }catch(error){$('edit-error').textContent=error.name==='AbortError'?'Konfirmasi terlalu lama. Refresh log untuk memeriksa hasil sebelum mencoba lagi.':error.message||String(error)}
+ finally{recordActionBusy=false;logRevision++;$('edit-submit').disabled=false;$('edit-cancel').disabled=false;$('edit-submit').textContent='Simpan perubahan';render();}
+};
+async function deleteRecord(id){
+ if(recordActionBusy||pendingEntries.some(row=>row.id===id))return;
+ const row=entries.find(item=>item.id===id);if(!row)return;
+ if(!window.confirm('Hapus catatan barcode '+row.barcode+' dari database? Tindakan ini tidak dapat dibatalkan.'))return;
+ recordActionBusy=true;logRevision++;render();$('log-status').textContent='Menghapus barang…';
+ try{
+  const result=API_URL?await recordRequest('delete',{id}):{ok:true,id};
+  if(result.id!==id)throw Error('Konfirmasi penghapusan tidak sesuai.');
+  entries=entries.filter(item=>item.id!==id);cacheRecords();$('log-status').textContent='Barang berhasil dihapus.';
+ }catch(error){$('log-status').textContent=error.name==='AbortError'?'Konfirmasi terlalu lama. Refresh log untuk memeriksa hasil.':'Gagal menghapus: '+(error.message||String(error))}
+ finally{recordActionBusy=false;logRevision++;render();}
+}
+$('rows').addEventListener('click',event=>{
+ const button=event.target.closest('button[data-record-action]');if(!button||button.disabled)return;
+ if(button.dataset.recordAction==='edit')openRecordEditor(button.dataset.id);
+ else deleteRecord(button.dataset.id);
+});
+
 let logRefreshing=false, logRevision=0;
 async function refreshLog(){
- if(!API_URL||logRefreshing||busy||queueSending)return;
+ if(!API_URL||logRefreshing||busy||queueSending||recordActionBusy)return;
  logRefreshing=true;
  const revision=logRevision;
  const button=$('refresh-log');
@@ -170,7 +235,7 @@ async function refreshLog(){
   const result=await api('list',{},controller.signal);
   if(!Array.isArray(result.entries))throw Error('Format data log tidak sesuai.');
   // A save may finish while this request is in flight. Keep that new record.
-  if(busy||revision!==logRevision){$('log-status').textContent='Data baru tersimpan. Log diperbarui pada sinkronisasi berikutnya.';return;}
+  if(busy||recordActionBusy||revision!==logRevision){$('log-status').textContent='Data baru tersimpan. Log diperbarui pada sinkronisasi berikutnya.';return;}
   entries=result.entries.map(x=>({...x,type:x.type||x.jenisOnt||x.jenis_ont||''}));
   localStorage.setItem(KEY,JSON.stringify(entries));render();
   updateSync(true,'Sheets tersambung');

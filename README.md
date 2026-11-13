@@ -44,3 +44,7 @@ Tombol Simpan memasukkan catatan ke antrean browser dan langsung menyiapkan form
 ### Kategori ONT
 
 Catatan baru memilih kategori **ONT Rusak** atau **ONT Dismantle**, terpisah dari jenis Huawei/Fiberhome. Kategori tersedia pada log, pencarian, antrean penyimpanan dan ekspor Excel. Backend menambahkan kolom Kategori ONT jika belum ada. Catatan dan antrean lama yang tidak memiliki kategori tetap kosong tanpa penetapan otomatis.
+
+### Edit dan hapus catatan
+
+Kolom Aksi menyediakan Edit dan Hapus untuk catatan yang sudah tersimpan. Edit memperbarui barcode, jenis, kategori, jumlah dan catatan sambil mempertahankan ID serta waktu pencatatan asli. Hapus meminta konfirmasi sebelum menghapus baris pada Google Sheets. Catatan yang masih di antrean belum dapat diedit/dihapus sampai sinkronisasi dikonfirmasi. Perubahan pada layar berlaku setelah respons backend berhasil; kegagalan jaringan ditampilkan tanpa menghapus data di layar. Jika konfirmasi terlalu lama, refresh log untuk memeriksa hasil operasi.
