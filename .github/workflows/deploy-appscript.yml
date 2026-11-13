@@ -11,6 +11,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: apps-script-main
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -34,9 +38,9 @@ jobs:
           test -n "$CLASP_CREDENTIALS" || { echo 'Missing CLASP_CREDENTIALS repository secret'; exit 1; }
           test -n "$SCRIPT_ID" || { echo 'Missing SCRIPT_ID repository secret'; exit 1; }
           printf '%s' "$CLASP_CREDENTIALS" > "$HOME/.clasprc.json"
-          printf '{"scriptId":"%s","rootDir":"apps-script"}\n' "$SCRIPT_ID" > apps-script/.clasp.json
+          printf '{"scriptId":"%s","rootDir":".","scriptExtensions":["gs"]}\n' "$SCRIPT_ID" > apps-script/.clasp.json
 
-      - name: Push source and create version
+      - name: Upload Apps Script source
         run: |
           cd apps-script
           test -s Code.gs
@@ -48,15 +52,35 @@ jobs:
           echo 'Remote file status:'
           clasp status
           clasp push --force
-          clasp version "GitHub Actions ${GITHUB_SHA}"
+
+      - name: Verify source uploaded to Google
+        env:
+          SCRIPT_ID: ${{ secrets.SCRIPT_ID }}
+        run: |
+          verify_dir=$(mktemp -d)
+          printf '{"scriptId":"%s","rootDir":".","scriptExtensions":["gs"]}\n' "$SCRIPT_ID" > "$verify_dir/.clasp.json"
+          cd "$verify_dir"
+          clasp pull
+          node - "$GITHUB_WORKSPACE/apps-script" "$verify_dir" <<'JS'
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const [source, remote] = process.argv.slice(2);
+          for (const name of ['Code.gs', 'Index.html']) {
+            if (fs.readFileSync(path.join(source, name), 'utf8').trim() !== fs.readFileSync(path.join(remote, name), 'utf8').trim()) {
+              throw new Error('Remote source does not match GitHub: ' + name);
+            }
+            console.log('Verified remote source: ' + name);
+          }
+          JS
 
       - name: Create or update web app deployment
         env:
           DEPLOYMENT_ID: ${{ secrets.DEPLOYMENT_ID }}
         run: |
           cd apps-script
-          if [ -n "$DEPLOYMENT_ID" ]; then
-            clasp deploy --deploymentId "$DEPLOYMENT_ID" --description "GitHub Actions ${GITHUB_SHA}"
-          else
-            clasp deploy --description "GitHub Actions ${GITHUB_SHA}"
+          # Update the endpoint used by the frontend, including when the secret is absent.
+          endpoint_id=$(node -e "const s=require('fs').readFileSync('Index.html','utf8');const m=s.match(/const API_URL='https:\/\/script\.google\.com\/macros\/s\/([^/]+)\/exec'/);if(!m)throw Error('Frontend API_URL missing');process.stdout.write(m[1])")
+          if [ -n "$DEPLOYMENT_ID" ] && [ "$DEPLOYMENT_ID" != "$endpoint_id" ]; then
+            echo '::notice::Deployment secret differs from frontend URL. Updating the endpoint used by the application.'
           fi
+          clasp deploy --deploymentId "$endpoint_id" --description "GitHub Actions ${GITHUB_SHA}"
