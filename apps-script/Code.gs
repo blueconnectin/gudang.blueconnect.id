@@ -19,24 +19,55 @@ function doGet() {
 function getSheet_() {
   const id = PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID');
   if (!id) throw new Error('Script Property SPREADSHEET_ID belum diatur.');
-  const ss = SpreadsheetApp.openById(id);
-  let sheet = ss.getSheetByName(SHEET_NAME);
-  if (!sheet) sheet = ss.insertSheet(SHEET_NAME);
-  if (sheet.getLastRow() === 0) sheet.appendRow(HEADERS);
-  return sheet;
+  const lock = LockService.getScriptLock(); lock.waitLock(10000);
+  try {
+    const ss = SpreadsheetApp.openById(id);
+    let sheet = ss.getSheetByName(SHEET_NAME);
+    if (!sheet) sheet = ss.insertSheet(SHEET_NAME);
+    if (sheet.getLastRow() === 0) sheet.appendRow(HEADERS);
+    else {
+      const headers = sheetHeaders_(sheet);
+      const missing = HEADERS.filter(header => !headers.includes(header));
+      // Add missing columns at the end; existing data stays in its original columns.
+      if (missing.length) sheet.getRange(1, headers.length + 1, 1, missing.length).setValues([missing]);
+    }
+    return sheet;
+  } finally { lock.releaseLock(); }
+}
+function sheetHeaders_(sheet) {
+  return sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(String);
 }
 function addEntry_(sheet, entry) {
   if (!entry || !String(entry.barcode || '').trim()) throw new Error('Barcode wajib diisi.');
+  const type = String(entry.type || '').trim();
+  if (!['Huawei', 'Fiberhome'].includes(type)) throw new Error('Pilih jenis ONT terlebih dahulu.');
   const qty = Number(entry.qty);
   if (!Number.isInteger(qty) || qty < 1) throw new Error('Jumlah harus bilangan bulat minimal 1.');
   const lock = LockService.getScriptLock(); lock.waitLock(10000);
   try {
-    sheet.appendRow([String(entry.id || Utilities.getUuid()), new Date(entry.timestamp || Date.now()), String(entry.barcode).trim(), String(entry.name || 'ONT').trim(), String(entry.type || '').trim(), qty, String(entry.note || '').trim()]);
+    const values = {
+      'ID': String(entry.id || Utilities.getUuid()),
+      'Waktu': new Date(entry.timestamp || Date.now()),
+      'Barcode': String(entry.barcode).trim(), 'Nama Barang': 'ONT',
+      'Jenis ONT': type, 'Jumlah': qty, 'Catatan': String(entry.note || '').trim()
+    };
+    sheet.appendRow(sheetHeaders_(sheet).map(header => values[header] ?? ''));
   } finally { lock.releaseLock(); }
   return { ok: true };
 }
 function listEntries_(sheet) {
   const last = sheet.getLastRow(); if (last < 2) return [];
-  return sheet.getRange(2, 1, last - 1, Math.max(HEADERS.length, sheet.getLastColumn())).getValues().reverse().map(r => ({ id: String(r[0]), timestamp: r[1] instanceof Date ? r[1].toISOString() : new Date(r[1]).toISOString(), barcode: String(r[2]), name: String(r[3]), type: String(r[4]), qty: Number(r[5]), note: String(r[6]) }));
+  const headers = sheetHeaders_(sheet);
+  return sheet.getRange(2, 1, last - 1, headers.length).getValues().reverse().map(row => {
+    const value = header => row[headers.indexOf(header)];
+    const time = value('Waktu');
+    return {
+      id: String(value('ID') || ''),
+      timestamp: time instanceof Date ? time.toISOString() : new Date(time).toISOString(),
+      barcode: String(value('Barcode') || ''), name: String(value('Nama Barang') || ''),
+      type: String(value('Jenis ONT') || ''), qty: Number(value('Jumlah')),
+      note: String(value('Catatan') || '')
+    };
+  });
 }
 function json_(value) { return ContentService.createTextOutput(JSON.stringify(value)).setMimeType(ContentService.MimeType.JSON); }
