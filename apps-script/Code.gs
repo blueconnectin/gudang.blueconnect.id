@@ -8,9 +8,10 @@ function doPost(e) {
 // Shared by HTTP clients and the Apps Script page (google.script.run).
 function handleRequest(body) {
   try {
-    if (!body || !['add', 'list'].includes(body.action)) throw new Error('Aksi tidak dikenal.');
+    if (!body || !['add', 'addMany', 'list'].includes(body.action)) throw new Error('Aksi tidak dikenal.');
     const context = getSheetContext_();
     if (body.action === 'add') return addEntry_(context.sheet, body.entry, context.headers);
+    if (body.action === 'addMany') return addManyEntries_(context.sheet, body.entries, context.headers);
     return { ok: true, entries: listEntries_(context.sheet, context.headers) };
   } catch (error) { return { ok: false, error: error.message || String(error) }; }
 }
@@ -62,6 +63,39 @@ function addEntry_(sheet, entry, headers) {
     sheet.appendRow((headers || sheetHeaders_(sheet)).map(header => values[header] ?? ''));
   } finally { lock.releaseLock(); }
   return { ok: true };
+}
+// Retry-safe batch endpoint: repeated IDs are acknowledged without adding another row.
+function addManyEntries_(sheet, entries, headers) {
+  if (!Array.isArray(entries) || !entries.length || entries.length > 20) throw new Error('Antrean tidak valid.');
+  const values = entries.map(entry => {
+    if (!entry || typeof entry.id !== 'string' || !entry.id || entry.id.length > 200) throw new Error('ID catatan tidak valid.');
+    const barcode = String(entry.barcode || '').trim();
+    if (!barcode) throw new Error('Barcode wajib diisi.');
+    if (!['Huawei', 'Fiberhome'].includes(entry.type)) throw new Error('Pilih jenis ONT terlebih dahulu.');
+    const qty = Number(entry.qty);
+    if (!Number.isInteger(qty) || qty < 1) throw new Error('Jumlah harus bilangan bulat minimal 1.');
+    const time = new Date(entry.timestamp);
+    if (isNaN(time.getTime())) throw new Error('Waktu catatan tidak valid.');
+    return {'ID': entry.id, 'Waktu': time, 'Barcode': barcode, 'Nama Barang': 'ONT',
+      'Jenis ONT': entry.type, 'Jumlah': qty, 'Catatan': String(entry.note || '').trim()};
+  });
+  const lock = LockService.getScriptLock(); lock.waitLock(10000);
+  try {
+    const last = sheet.getLastRow();
+    const idColumn = headers.indexOf('ID') + 1;
+    const existing = new Set(last > 1 ? sheet.getRange(2, idColumn, last - 1, 1).getValues().map(row => String(row[0])) : []);
+    const fresh = values.filter(value => {
+      if (existing.has(value.ID)) return false;
+      existing.add(value.ID);return true;
+    });
+    if (fresh.length) {
+      const needed = last + fresh.length - sheet.getMaxRows();
+      if (needed > 0) sheet.insertRowsAfter(sheet.getMaxRows(), needed);
+      sheet.getRange(last + 1, 1, fresh.length, headers.length)
+        .setValues(fresh.map(value => headers.map(header => value[header] ?? '')));
+    }
+    return {ok: true, ids: values.map(value => value.ID)};
+  } finally { lock.releaseLock(); }
 }
 function listEntries_(sheet, suppliedHeaders) {
   const last = sheet.getLastRow(); if (last < 2) return [];
