@@ -56,3 +56,5 @@ Kolom Catatan pada aplikasi diganti dengan dropdown Keterangan Close WO: Sudah a
 ### Rekap QTY tersimpan
 
 Rekap menampilkan jumlah QTY untuk ONT Rusak, ONT Dismantle, dan ONT Baru dari seluruh catatan tersimpan. Antrean yang belum dikonfirmasi tidak dihitung; filter pencarian tidak mengubah rekap. Rekap diperbarui setelah sinkronisasi, edit, hapus, dan refresh berhasil. Saat offline, rekap memakai cache data tersimpan terakhir. Catatan lama tanpa kategori tidak dimasukkan ke kategori mana pun.
+
+Rekap Close WO menampilkan total QTY berstatus Sudah, Belum, dan Belum diisi (untuk data lama tanpa status). Perhitungan memakai seluruh data tersimpan dengan aturan yang sama seperti rekap kategori, termasuk pembaruan setelah edit status WO.
