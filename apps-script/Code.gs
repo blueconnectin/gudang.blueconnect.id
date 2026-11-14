@@ -122,7 +122,7 @@ function listEntries_(sheet, suppliedHeaders) {
 // Older queued records can have no category. Never guess a category for them.
 function categoryValue_(entry) {
   const category = String(entry.category || '').trim();
-  if (category && !['ONT Rusak', 'ONT Dismantle'].includes(category)) throw new Error('Kategori ONT tidak valid.');
+  if (category && !['ONT Rusak', 'ONT Dismantle', 'ONT Baru'].includes(category)) throw new Error('Kategori ONT tidak valid.');
   return category;
 }
 function findRecordRow_(sheet, headers, id) {

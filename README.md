@@ -43,7 +43,7 @@ Tombol Simpan memasukkan catatan ke antrean browser dan langsung menyiapkan form
 
 ### Kategori ONT
 
-Catatan baru memilih kategori **ONT Rusak** atau **ONT Dismantle**, terpisah dari jenis Huawei/Fiberhome. Kategori tersedia pada log, pencarian, antrean penyimpanan dan ekspor Excel. Backend menambahkan kolom Kategori ONT jika belum ada. Catatan dan antrean lama yang tidak memiliki kategori tetap kosong tanpa penetapan otomatis.
+Catatan baru memilih kategori **ONT Rusak**, **ONT Dismantle**, atau **ONT Baru**, terpisah dari jenis Huawei/Fiberhome. Kategori tersedia pada log, pencarian, antrean penyimpanan dan ekspor Excel. Backend menambahkan kolom Kategori ONT jika belum ada. Catatan dan antrean lama yang tidak memiliki kategori tetap kosong tanpa penetapan otomatis.
 
 ### Edit dan hapus catatan
 
@@ -52,3 +52,7 @@ Kolom Aksi menyediakan Edit dan Hapus untuk catatan yang sudah tersimpan. Edit m
 ### Keterangan Close WO
 
 Kolom Catatan pada aplikasi diganti dengan dropdown Keterangan Close WO: Sudah atau Belum. Status wajib dipilih untuk input baru dan saat mengedit; muncul pada log, pencarian, serta ekspor Excel. Backend menambahkan kolom Keterangan Close WO pada Sheets tanpa menghapus catatan lama. Data/antrean lama yang belum memiliki status tidak diberi nilai otomatis dan tetap dapat disinkronkan.
+
+### Rekap QTY tersimpan
+
+Rekap menampilkan jumlah QTY untuk ONT Rusak, ONT Dismantle, dan ONT Baru dari seluruh catatan tersimpan. Antrean yang belum dikonfirmasi tidak dihitung; filter pencarian tidak mengubah rekap. Rekap diperbarui setelah sinkronisasi, edit, hapus, dan refresh berhasil. Saat offline, rekap memakai cache data tersimpan terakhir. Catatan lama tanpa kategori tidak dimasukkan ke kategori mana pun.
